@@ -1,0 +1,6 @@
+package com.server.Models;
+
+public enum OrderStatus {
+    PENDING_PAYMENT, CONFIRMED, PREPARING, READY_FOR_PICKUP,
+    PICKED_UP, IN_TRANSIT, DELIVERED, CANCELLED, FAILED
+}

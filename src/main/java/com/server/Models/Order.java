@@ -3,10 +3,10 @@ package com.server.Models;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.DBRef;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -23,7 +23,7 @@ public class Order {
     private User consumer;
 
     private Double totalAmount;
-    private OrderStatus status = OrderStatus.PENDING;
+    private OrderStatus status;
 
     @DBRef
     private User deliveryPartner;
@@ -35,9 +35,9 @@ public class Order {
 
     // Embedded order items
     private List<OrderItem> orderItems;
+
+    // Razorpay fields
+    private String razorpayOrderId;
+    private String razorpayPaymentId;
 }
 
-enum OrderStatus {
-    PENDING, CONFIRMED, PREPARING, READY_FOR_PICKUP,
-    PICKED_UP, IN_TRANSIT, DELIVERED, CANCELLED
-}

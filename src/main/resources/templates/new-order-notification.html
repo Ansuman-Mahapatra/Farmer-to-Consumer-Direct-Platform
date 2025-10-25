@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>New Order Notification</title>
+</head>
+<body>
+<h2>New Order Received!</h2>
+<p>Dear <span th:text="${farmerName}">Farmer</span>,</p>
+<p>You have received a new order for your product.</p>
+<p><strong>Order ID:</strong> <span th:text="${orderId}"></span></p>
+<p><strong>Product:</strong> <span th:text="${productName}"></span></p>
+<p>Please prepare the order for delivery.</p>
+</body>
+</html>

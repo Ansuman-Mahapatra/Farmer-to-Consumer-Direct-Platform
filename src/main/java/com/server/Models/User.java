@@ -26,8 +26,15 @@ public class User {
 
     @CreatedDate
     private LocalDateTime createdAt;
+
+    // Add constructor without id for registration
+    public User(String name, String email, String password, Role role, String phone, String address) {
+        this.name = name;
+        this.email = email;
+        this.password = password;
+        this.role = role;
+        this.phone = phone;
+        this.address = address;
+    }
 }
 
-enum Role {
-    FARMER, CONSUMER, DELIVERY_PARTNER, ADMIN
-}
