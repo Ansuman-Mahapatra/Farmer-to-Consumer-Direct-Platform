@@ -1,0 +1,154 @@
+.back-btn {
+  margin-bottom: 20px;
+}
+
+.order-details {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.order-header-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 20px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.order-header-section h1 {
+  margin-bottom: 5px;
+  color: #333;
+}
+
+.order-date {
+  color: #666;
+  font-size: 16px;
+}
+
+.order-status-badge {
+  padding: 10px 20px;
+  border-radius: 25px;
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.payment-section {
+  background: #fff3cd;
+  border: 2px solid #ffc107;
+}
+
+.payment-info {
+  background: white;
+  padding: 15px;
+  border-radius: 4px;
+  margin-bottom: 20px;
+  color: #856404;
+  font-size: 14px;
+}
+
+.order-items-section {
+  margin-top: 20px;
+}
+
+.order-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.order-item {
+  display: flex;
+  gap: 20px;
+  padding: 15px;
+  background: #f9f9f9;
+  border-radius: 8px;
+}
+
+.order-item-image {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 8px;
+  background-color: #f0f0f0;
+}
+
+.order-item-details {
+  flex: 1;
+}
+
+.order-item-details h3 {
+  margin-bottom: 8px;
+  color: #333;
+}
+
+.order-item-category {
+  color: #666;
+  font-size: 14px;
+  margin-bottom: 8px;
+  text-transform: capitalize;
+}
+
+.order-item-quantity {
+  color: #666;
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+.order-item-price {
+  color: #4CAF50;
+  font-weight: 500;
+  font-size: 16px;
+}
+
+.order-info-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.order-info-section .card h2 {
+  margin-bottom: 15px;
+  color: #333;
+}
+
+.order-info-section .card p {
+  margin-bottom: 10px;
+  color: #666;
+  line-height: 1.6;
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  color: #666;
+}
+
+.summary-total {
+  display: flex;
+  justify-content: space-between;
+  padding-top: 15px;
+  border-top: 2px solid #eee;
+  margin-top: 15px;
+  font-size: 20px;
+  font-weight: bold;
+  color: #333;
+}
+
+@media (max-width: 968px) {
+  .order-header-section {
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .order-info-section {
+    grid-template-columns: 1fr;
+  }
+}
+

@@ -36,8 +36,8 @@ public class Order {
     // Embedded order items
     private List<OrderItem> orderItems;
 
-    // Razorpay fields
-    private String razorpayOrderId;
-    private String razorpayPaymentId;
+    // Mock payment fields (reusing existing field names)
+    private String razorpayOrderId;  // Now stores mock order ID
+    private String razorpayPaymentId; // Now stores mock payment ID
 }
 

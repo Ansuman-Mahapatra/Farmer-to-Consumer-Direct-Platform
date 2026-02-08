@@ -25,4 +25,20 @@ public class Product {
     private String imageUrl;
     private String description;
     private String language = "en";
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setLanguage(String language) {
+        this.language = language;
+    }
+
+    public String getLanguage() {
+        return language;
+    }
 }

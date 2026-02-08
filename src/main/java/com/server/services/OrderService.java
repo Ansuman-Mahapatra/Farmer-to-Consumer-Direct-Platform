@@ -6,13 +6,12 @@ import com.server.Repositories.ProductRepository;
 import com.server.Repositories.UserRepository;
 import com.server.controllers.OrderItemRequest;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -20,6 +19,8 @@ import java.util.Optional;
 
 @Service
 public class OrderService {
+
+    private static final Logger logger = LoggerFactory.getLogger(OrderService.class);
 
     @Autowired
     private OrderRepository orderRepository;
@@ -31,7 +32,7 @@ public class OrderService {
     private UserRepository userRepository;
 
     @Autowired
-    private RazorpayService razorpayService;
+    private MockPaymentService mockPaymentService;
 
     @Autowired
     private EmailService emailService;
@@ -51,7 +52,6 @@ public class OrderService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
     }
 
-    // In your OrderService, update the createOrder method:
     @Transactional
     public Order createOrder(List<OrderItemRequest> items, String deliveryAddress) {
         User consumer = getCurrentUser();
@@ -81,10 +81,7 @@ public class OrderService {
                         ", Requested: " + item.getQuantity());
             }
 
-            // Reduce inventory (temporarily for pending payment)
-            product.setAvailableQuantity(product.getAvailableQuantity() - item.getQuantity());
-            productRepository.save(product);
-
+            // Create order item
             OrderItem orderItem = new OrderItem();
             orderItem.setProduct(product);
             orderItem.setQuantity(item.getQuantity());
@@ -105,41 +102,40 @@ public class OrderService {
         Order savedOrder = orderRepository.save(order);
 
         try {
-            // Create Razorpay order
-            String razorpayOrderId = razorpayService.createRazorpayOrder(savedOrder.getId(), totalAmount);
-            savedOrder.setRazorpayOrderId(razorpayOrderId);
+            // Create mock payment order
+            String mockOrderId = mockPaymentService.createPaymentOrder(savedOrder.getId(), totalAmount);
+            savedOrder.setRazorpayOrderId(mockOrderId);
             return orderRepository.save(savedOrder);
 
         } catch (Exception e) {
-            // If Razorpay fails, restore inventory and throw error
-            for (OrderItem item : orderItems) {
-                Product product = item.getProduct();
-                product.setAvailableQuantity(product.getAvailableQuantity() + item.getQuantity());
-                productRepository.save(product);
-            }
-
-            // Delete the order since payment failed
-            orderRepository.delete(savedOrder);
-
-            throw new RuntimeException("Failed to create payment order: " + e.getMessage());
+            logger.error("Error creating mock payment: {}", e.getMessage());
+            // Continue with order even if payment setup fails
+            savedOrder.setRazorpayOrderId("mock_order_fallback");
+            return orderRepository.save(savedOrder);
         }
     }
 
     @Transactional
-    public void confirmOrderPayment(String orderId, String razorpayPaymentId, String razorpaySignature) {
+    public void confirmOrderPayment(String orderId, String paymentId, String signature) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found"));
 
-        // Verify payment signature
-        boolean isValidSignature = razorpayService.verifyPaymentSignature(
-                order.getRazorpayOrderId(), razorpayPaymentId, razorpaySignature);
+        // Verify payment using mock service
+        boolean isValidPayment = mockPaymentService.verifyPayment(order.getRazorpayOrderId(), paymentId, signature);
 
-        if (!isValidSignature) {
-            throw new RuntimeException("Invalid payment signature");
+        if (!isValidPayment) {
+            throw new RuntimeException("Invalid payment verification");
+        }
+
+        // Reduce inventory only after successful payment
+        for (OrderItem item : order.getOrderItems()) {
+            Product product = item.getProduct();
+            product.setAvailableQuantity(product.getAvailableQuantity() - item.getQuantity());
+            productRepository.save(product);
         }
 
         order.setStatus(OrderStatus.CONFIRMED);
-        order.setRazorpayPaymentId(razorpayPaymentId);
+        order.setRazorpayPaymentId(paymentId);
         orderRepository.save(order);
 
         // Send confirmation emails
@@ -147,23 +143,29 @@ public class OrderService {
     }
 
     private void sendOrderConfirmationEmails(Order order) {
-        // Send email to consumer
-        emailService.sendOrderConfirmationEmail(
-                order.getConsumer().getEmail(),
-                order.getConsumer().getName(),
-                order.getId(),
-                order.getTotalAmount()
-        );
-
-        // Send email to farmers for each product
-        for (OrderItem item : order.getOrderItems()) {
-            User farmer = item.getProduct().getFarmer();
-            emailService.sendNewOrderNotificationToFarmer(
-                    farmer.getEmail(),
-                    farmer.getName(),
+        try {
+            // Send email to consumer
+            emailService.sendOrderConfirmationEmail(
+                    order.getConsumer().getEmail(),
+                    order.getConsumer().getName(),
                     order.getId(),
-                    item.getProduct().getName()
+                    order.getTotalAmount()
             );
+
+            // Send email to farmers for each product
+            for (OrderItem item : order.getOrderItems()) {
+                User farmer = item.getProduct().getFarmer();
+                emailService.sendNewOrderNotificationToFarmer(
+                        farmer.getEmail(),
+                        farmer.getName(),
+                        order.getId(),
+                        item.getProduct().getName()
+                );
+            }
+
+            logger.info("✅ Confirmation emails sent for order: {}", order.getId());
+        } catch (Exception e) {
+            logger.error("Error sending confirmation emails: {}", e.getMessage());
         }
     }
 

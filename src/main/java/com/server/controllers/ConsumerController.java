@@ -4,7 +4,7 @@ import com.server.Models.Order;
 import com.server.Models.Product;
 import com.server.services.OrderService;
 import com.server.services.ProductService;
-import com.server.services.RazorpayService;
+import com.server.services.MockPaymentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -29,7 +29,7 @@ public class ConsumerController {
     private OrderService orderService;
 
     @Autowired
-    private RazorpayService razorpayService; // Add this injection
+    private MockPaymentService mockPaymentService;
 
     @GetMapping("/products")
     public ResponseEntity<?> browseProducts(
@@ -86,8 +86,8 @@ public class ConsumerController {
             Map<String, Object> response = new HashMap<>();
             response.put("message", "Order created successfully");
             response.put("order", order);
-            response.put("razorpayOrderId", order.getRazorpayOrderId());
-            response.put("razorpayKeyId", razorpayService.getRazorpayKeyId()); // Now this will work
+            response.put("mockOrderId", order.getRazorpayOrderId());
+            response.put("paymentInstructions", "Use any payment ID starting with 'mock_pay_' for testing");
 
             return ResponseEntity.ok(response);
         } catch (Exception e) {
@@ -100,14 +100,19 @@ public class ConsumerController {
     @PostMapping("/orders/{orderId}/confirm-payment")
     public ResponseEntity<?> confirmPayment(
             @PathVariable String orderId,
-            @RequestBody PaymentConfirmationRequest request) {
+            @RequestBody Map<String, String> request) {
 
         try {
-            orderService.confirmOrderPayment(
-                    orderId,
-                    request.getRazorpayPaymentId(),
-                    request.getRazorpaySignature()
-            );
+            String paymentId = request.get("razorpayPaymentId");
+            String signature = request.get("razorpaySignature");
+
+            if (paymentId == null || signature == null) {
+                return ResponseEntity.badRequest().body(
+                        Map.of("error", "razorpayPaymentId and razorpaySignature are required")
+                );
+            }
+
+            orderService.confirmOrderPayment(orderId, paymentId, signature);
 
             return ResponseEntity.ok(Map.of("message", "Payment confirmed successfully"));
         } catch (Exception e) {
@@ -140,27 +145,35 @@ public class ConsumerController {
             );
         }
     }
+
+    // Get payment details for an order
+    @GetMapping("/orders/{orderId}/payment-details")
+    public ResponseEntity<?> getPaymentDetails(@PathVariable String orderId) {
+        try {
+            Map<String, Object> paymentDetails = mockPaymentService.getPaymentDetails(orderId);
+            if (paymentDetails != null) {
+                return ResponseEntity.ok(paymentDetails);
+            } else {
+                return ResponseEntity.badRequest().body(
+                        Map.of("error", "No payment details found for this order")
+                );
+            }
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(
+                    Map.of("error", e.getMessage())
+            );
+        }
+    }
 }
 
-// Request DTOs (keep the same as before)
+// Request DTOs (keep these at the bottom of the file)
 class PlaceOrderRequest {
     private List<OrderItemRequest> items;
     private String deliveryAddress;
 
-    // Getters and setters
     public List<OrderItemRequest> getItems() { return items; }
     public void setItems(List<OrderItemRequest> items) { this.items = items; }
     public String getDeliveryAddress() { return deliveryAddress; }
     public void setDeliveryAddress(String deliveryAddress) { this.deliveryAddress = deliveryAddress; }
 }
 
-class PaymentConfirmationRequest {
-    private String razorpayPaymentId;
-    private String razorpaySignature;
-
-    // Getters and setters
-    public String getRazorpayPaymentId() { return razorpayPaymentId; }
-    public void setRazorpayPaymentId(String razorpayPaymentId) { this.razorpayPaymentId = razorpayPaymentId; }
-    public String getRazorpaySignature() { return razorpaySignature; }
-    public void setRazorpaySignature(String razorpaySignature) { this.razorpaySignature = razorpaySignature; }
-}

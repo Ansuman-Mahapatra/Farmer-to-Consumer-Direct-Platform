@@ -1,0 +1,21 @@
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.dashboard-header h1 {
+  color: #333;
+  font-size: 32px;
+}
+
+.products-section {
+  margin-top: 30px;
+}
+
+.products-section h2 {
+  color: #333;
+  margin-bottom: 20px;
+}
+
